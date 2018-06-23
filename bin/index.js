@@ -4,6 +4,7 @@
 const program = require('commander')
 const sessionCtx = require('../lib/session-context')
 const userCtx = require('../lib/user-context')
+const packageCtx = require('../lib/package-context')
 
 const vaultBuildHost = 'localhost'
 const vaultBuildPort = '3000'
@@ -149,24 +150,83 @@ program
   .command('list-packages')
   .alias('lp')
   .option('-l --long', 'Print long form of packages')
-  .action((cmd) => { console.log('Invoking the list-packages command') })
+  .action((cmd) => {
+    packageCtx.listPackages(
+      baseUrl(program.secure, program.host, program.port),
+      cmd.long)
+      .catch((err) => {
+        console.error(err.message)
+        if (program.verbose) console.error(err)
+        process.exit(1)
+      })
+  })
 
 program
   .command('create-package <app-version>')
   .alias('cp')
   .option('-b --back-end-version <back-end-version>', 'Specify the back-end version (default app-version)')
   .option('-f --front-end-version <front-end-version', 'Specify the front-end versino (default app-version)')
-  .action((appVersion, cmd) => { console.log(`Invoking the create-package command with ${appVersion}`) })
+  .action((appVersion, cmd) => {
+    packageCtx.createPackage(
+      baseUrl(program.secure, program.host, program.port),
+      appVersion,
+      cmd.backEndVersion,
+      cmd.frontEndVersion)
+      .catch((err) => {
+        console.error(err.message)
+        if (program.verbose) console.error(err)
+        process.exit(1)
+      })
+  })
 
 program
-  .command('show-package <package-id>')
+  .command('show-package <application-version>')
   .alias('sp')
-  .action((packageId, cmd) => { console.log(`Invoking the show-package command with ${packageId}`) })
+  .action((applicationVersion, cmd) => {
+    packageCtx.showPackage(
+      baseUrl(program.secure, program.host, program.port),
+      applicationVersion)
+      .catch((err) => {
+        console.error(err.message)
+        if (program.verbose) console.error(err)
+        process.exit(1)
+      })
+  })
 
 program
-  .command('remove-package <package-id>')
+  .command('remove-package <application-version>')
   .alias('rp')
   .option('-f --force', "Don't ask.")
-  .action((packageId, cmd) => { console.log(`Invoking the remove-package command with ${packageId}`) })
+  .action((applicationVersion, cmd) => {
+    packageCtx.removePackage(
+      baseUrl(program.secure, program.host, program.port),
+      applicationVersion,
+      cmd.force)
+      .catch((err) => {
+        console.error(err.message)
+        if (program.verbose) console.error(err)
+        process.exit(1)
+      })
+  })
+
+program
+  .command('download-package <application-version>')
+  .alias('dp')
+  .option('-o --output-file <output-file>', 'Specify the path to download to')
+  .action((applicationVersion, cmd) => {
+    if (!cmd.outputFile) {
+      console.error('Must specify an output file')
+      process.exit(1)
+    }
+    packageCtx.downloadPackage(
+      baseUrl(program.secure, program.host, program.port),
+      applicationVersion,
+      cmd.outputFile)
+      .catch((err) => {
+        console.error(err.message)
+        if (program.verbose) console.error(err)
+        process.exit(1)
+      })
+  })
 
 program.parse(process.argv)
